@@ -9,17 +9,14 @@ def get_text(message: Message) -> [None, str]:
     text_to_return = message.text
     if message.text is None:
         return None
-    if " " in text_to_return:
-        try:
-            return message.text.split(None, 1)[1]
-        except IndexError:
-            return None
-    else:
+    if " " not in text_to_return:
+        return None
+    try:
+        return message.text.split(None, 1)[1]
+    except IndexError:
         return None
 
-heroku_client = None
-if HEROKU_API_KEY:
-    heroku_client = heroku3.from_key(HEROKU_API_KEY)
+heroku_client = heroku3.from_key(HEROKU_API_KEY) if HEROKU_API_KEY else None
 
 def check_heroku(func):
     @wraps(func)
@@ -49,13 +46,14 @@ def fetch_heroku_git_url(api_key, app_name):
         heroku_applications = heroku.apps()
     except:
         return None
-    heroku_app = None
-    for app in heroku_applications:
-        if app.name == app_name:
-            heroku_app = app
-            break
-    if not heroku_app:
-        return None
-    return heroku_app.git_url.replace("https://", "https://api:" + api_key + "@")
+    heroku_app = next(
+        (app for app in heroku_applications if app.name == app_name), None
+    )
+
+    return (
+        heroku_app.git_url.replace("https://", f"https://api:{api_key}@")
+        if heroku_app
+        else None
+    )
 
 HEROKU_URL = fetch_heroku_git_url(HEROKU_API_KEY, HEROKU_APP_NAME)

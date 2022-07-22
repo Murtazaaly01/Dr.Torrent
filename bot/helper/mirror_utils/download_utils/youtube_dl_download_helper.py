@@ -18,7 +18,7 @@ class MyLogger:
         LOGGER.debug(msg)
         match = re.search(r'.ffmpeg..Merging formats into..(.*?).$', msg)
         if match and not self.obj.is_playlist:
-            newname = match.group(1)
+            newname = match[1]
             newname = newname.split("/")
             newname = newname[-1]
             self.obj.name = newname
@@ -157,10 +157,12 @@ class YoutubeDLHelper(DownloadHelper):
           self.opts['postprocessors'] = [{'key': 'FFmpegExtractAudio','preferredcodec': 'mp3','preferredquality': '320',}]
         else:
           self.opts['format'] = qual
-        if not self.is_playlist:
-            self.opts['outtmpl'] = f"{path}/{self.name}"
-        else:
-            self.opts['outtmpl'] = f"{path}/{self.name}/%(title)s.%(ext)s"
+        self.opts['outtmpl'] = (
+            f"{path}/{self.name}/%(title)s.%(ext)s"
+            if self.is_playlist
+            else f"{path}/{self.name}"
+        )
+
         self.__download(link)
 
     def cancel_download(self):
